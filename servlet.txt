@@ -1,23 +1,25 @@
-package org.ftd.builderforce.easyservice.web.controllers;
+package org.ftd.builderforce.ppm.web.cmds;
 
 import java.io.IOException;
+import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.persistence.EntityManagerFactory;
+import javax.persistence.Persistence;
 import javax.servlet.ServletException;
-import javax.servlet.annotation.WebServlet;
 import javax.servlet.annotation.WebInitParam;
+import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import org.ftd.educational.catolica.prog4.daos.ClienteDAO;
+import org.ftd.educational.catolica.prog4.daos.exceptions.NonexistentEntityException;
+import org.ftd.educational.catolica.prog4.entities.Cliente;
 
-/**
- *
- * @author Fabio Tavares Dippold
- * @version 2017-11-13 - 1.0.2
- * 
- */
-@WebServlet(name = "UserControllerServlet", urlPatterns = {"/user"}, initParams = {
+@WebServlet(name = "CustomerMvcServlet", urlPatterns = {"/mvccustomer"}, initParams = {
     @WebInitParam(name = "do", value = "")})
 
-public class UserControllerServlet extends HttpServlet {
+public class CustomerMvcServlet extends HttpServlet {
 
     private static final long serialVersionUID = -1587237767624179860L;
 
@@ -45,7 +47,7 @@ public class UserControllerServlet extends HttpServlet {
                 break;
             case "updmodel":
                 nextAction = buildUpdModel(request, response);
-                break;              
+                break;
             case "readmodel":
                 nextAction = buildReadModel(request, response);
                 break;
@@ -61,80 +63,190 @@ public class UserControllerServlet extends HttpServlet {
             default:
                 request.setAttribute("msg", "Erro controller: recebi obscuro do=" + action);
                 nextAction = "signin.jsp";
-        }        
-        
+        }
+
         request.getRequestDispatcher(nextAction).forward(request, response);
     }
 
-    private String buildLstModel(HttpServletRequest request, HttpServletResponse response){
-        String nextAction = "/WEB-INF/views/LstUserView.jsp";
-        
-        
+    private String buildLstModel(HttpServletRequest request, HttpServletResponse response) {
+        String nextAction = "/WEB-INF/views/Customer/ListView.jsp";
+        request.setAttribute("applicationName", "Sistema de Cadastros");
+        request.setAttribute("title", "Cadastrar Cliente");
+
+        request.setAttribute("userName", (String) request.getSession().getAttribute("username"));
+        request.setAttribute("datasource", this.findAll());
+        request.setAttribute("showColumnId", true);
+
+        request.setAttribute("actionToAdd", "mvccustomer?do=addmodel");
+        request.setAttribute("actionToUpd", "mvccustomer?do=updmodel&id=");
+        request.setAttribute("actionToRead", "mvccustomer?do=readmodel&id=");
+
         return nextAction;
     }
-    
-    private String buildAddModel(HttpServletRequest request, HttpServletResponse response){
-        String nextAction = "/WEB-INF/views/AddUserView.jsp";
+
+    private String buildAddModel(HttpServletRequest request, HttpServletResponse response) {
+        String nextAction = "/WEB-INF/views/Customer/IdNameCreateView.jsp";
+
+        request.setAttribute("applicationName", "Sistema de Cadastros");
+        request.setAttribute("title", "Novo Cliente");
         
-        
+        request.setAttribute("userName", (String) request.getSession().getAttribute("username"));
+
+        request.setAttribute("controller", "mvccustomer");
+        request.setAttribute("action", "add");
+        request.setAttribute("fieldNameLabel", "Nome");
+        request.setAttribute("fieldCpfLabel", "CPF");
+        request.setAttribute("fieldEmailLabel", "Email");
+        request.setAttribute("fieldTelefoneLabel", "Telefone");
+
         return nextAction;
-    } 
-    
-    private String buildUpdModel(HttpServletRequest request, HttpServletResponse response){
-        String nextAction = "/WEB-INF/views/UpdUserView.jsp";
+    }
+
+    private String buildUpdModel(HttpServletRequest request, HttpServletResponse response) {
+        String nextAction = "/WEB-INF/views/Customer/IdNameUpdateView.jsp";
         String id = this.readParameter(request, "id");
+
+        request.setAttribute("applicationName", "Sistema de Cadastros");
+        request.setAttribute("title", "Editar Cliente " + id);
         
-        
+        request.setAttribute("userName", (String) request.getSession().getAttribute("username"));
+
+        request.setAttribute("controller", "mvccustomer");
+        request.setAttribute("action", "upd");
+        request.setAttribute("fieldNameLabel", "Nome");
+        request.setAttribute("fieldCpfLabel", "CPF");
+        request.setAttribute("fieldEmailLabel", "Email");
+        request.setAttribute("fieldTelefoneLabel", "Telefone");
+
+        final String PERSISTENCE_UNIT_NAME = "persistenciaPU";
+        EntityManagerFactory factory = Persistence.createEntityManagerFactory(PERSISTENCE_UNIT_NAME);
+        ClienteDAO dao = new ClienteDAO(factory);
+
+        request.setAttribute("entity", dao.findCliente(Long.parseLong(id)));
+
         return nextAction;
-    }    
-    
-    private String buildReadModel(HttpServletRequest request, HttpServletResponse response){
-        String nextAction = "/WEB-INF/views/ReadUserView.jsp";
+    }
+
+    private String buildReadModel(HttpServletRequest request, HttpServletResponse response) {
+        String nextAction = "/WEB-INF/views/Customer/IdNameReadView.jsp";
         String id = this.readParameter(request, "id");
+
+        request.setAttribute("applicationName", "Sistema de Cadastros");
+        request.setAttribute("title", "Apagar Cliente " + id);
         
-        
+        request.setAttribute("userName", (String) request.getSession().getAttribute("username"));
+
+        request.setAttribute("controller", "mvccustomer");
+        request.setAttribute("action", "del");
+
+        final String PERSISTENCE_UNIT_NAME = "persistenciaPU";
+        EntityManagerFactory factory = Persistence.createEntityManagerFactory(PERSISTENCE_UNIT_NAME);
+        ClienteDAO dao = new ClienteDAO(factory);
+
+        request.setAttribute("entity", dao.findCliente(Long.parseLong(id)));
+
         return nextAction;
-    }     
-    
-    private String doAddNew(HttpServletRequest request, HttpServletResponse response){
-        String successNextAction = "user?do=lstmodel";
-        String failureNextAction = "user?do=addmodel";
+    }
+
+    private String doAddNew(HttpServletRequest request, HttpServletResponse response) {
+        String successNextAction = "mvccustomer?do=lstmodel";
+        String failureNextAction = "mvccustomer?do=addmodel";
         
-        
-        return successNextAction;
-    }      
-    
-    private String doUpdate(HttpServletRequest request, HttpServletResponse response){
+        request.setAttribute("userName", (String) request.getSession().getAttribute("username"));
+
+        final String PERSISTENCE_UNIT_NAME = "persistenciaPU";
+        EntityManagerFactory factory = Persistence.createEntityManagerFactory(PERSISTENCE_UNIT_NAME);
+        ClienteDAO dao = new ClienteDAO(factory);
+        Cliente o = new Cliente();
+
+        o.setName(this.readParameter(request, "nameInput"));
+        o.setCpf(this.readParameter(request, "cpfInput"));
+        o.setEmail(this.readParameter(request, "emailInput"));
+        o.setTelefone(this.readParameter(request, "telefoneInput"));
+
+        try {
+            dao.create(o);
+
+            return successNextAction;
+        } catch (Exception e) {
+            request.setAttribute("msg", "A criação do registro falhou! Java: " + e.getMessage());
+
+            return failureNextAction;
+        }
+
+    }
+
+    private String doUpdate(HttpServletRequest request, HttpServletResponse response) {
+        request.setAttribute("userName", (String) request.getSession().getAttribute("username"));
         String id = this.readParameter(request, "id");
-        String successNextAction = "user?do=lstmodel";
-        String failureNextAction = "user?do=updmodel&id=" + id;
-        
-        
-        return successNextAction;
-    }     
-   
-    private String doRemove(HttpServletRequest request, HttpServletResponse response){
-        String id = this.readParameter(request, "id");
-        String successNextAction = "user?do=lstmodel";
-        String failureNextAction = "user?do=readmodel&id=" + id;
-        
-        
-        return successNextAction;
-    }     
-    
+
+        String successNextAction = "mvccustomer?do=lstmodel";
+        String failureNextAction = "mvccustomer?do=updmodel";
+
+        final String PERSISTENCE_UNIT_NAME = "persistenciaPU";
+        EntityManagerFactory factory = Persistence.createEntityManagerFactory(PERSISTENCE_UNIT_NAME);
+        ClienteDAO dao = new ClienteDAO(factory);
+        Cliente o = dao.findCliente(Long.parseLong(id));
+        o.setName(this.readParameter(request, "nameInput"));
+        o.setCpf(this.readParameter(request, "cpfInput"));
+        o.setEmail(this.readParameter(request, "emailInput"));
+        o.setTelefone(this.readParameter(request, "telefoneInput"));
+
+        try {
+            dao.edit(o);
+
+            return successNextAction;
+        } catch (Exception e) {
+            request.setAttribute("msg", "A atualização falhou! Java: " + e.getMessage());
+
+            return failureNextAction;
+        }
+    }
+
+    private String doRemove(HttpServletRequest request, HttpServletResponse response) {
+        request.setAttribute("userName", (String) request.getSession().getAttribute("username"));
+
+        String successNextAction = "mvccustomer?do=lstmodel";
+        String failureNextAction = "mvccustomer?do=readmodel&id=" + this.readParameter(request, "id");
+
+        final String PERSISTENCE_UNIT_NAME = "persistenciaPU";
+        EntityManagerFactory factory = Persistence.createEntityManagerFactory(PERSISTENCE_UNIT_NAME);
+        ClienteDAO dao = new ClienteDAO(factory);
+        Cliente cliente = new Cliente();
+        Long id = Long.parseLong(request.getParameter("id"));
+
+        cliente = dao.findCliente(id);
+        try {
+            dao.destroy(cliente.getId());
+
+            return successNextAction;
+        } catch (Exception ex) {
+            request.setAttribute("msg", "A atualização falhou! Java: " + ex.getMessage());
+            return failureNextAction;
+        }
+    }
+
     private String readParameter(HttpServletRequest req, String parameterName) {
-        return readParameter(req,parameterName,"");
-    }     
-    
+        return readParameter(req, parameterName, "");
+    }
+
     private String readParameter(HttpServletRequest req, String parameterName, String defaultValue) {
         String value = req.getParameter(parameterName);
-        if ((value == null) ||(value.equals(""))) {
+        if ((value == null) || (value.equals(""))) {
             value = defaultValue;
         }
-        
+
         return value;
-    }     
-    
+    }
+
+    private List<Cliente> findAll() {
+        final String PERSISTENCE_UNIT_NAME = "persistenciaPU";
+        EntityManagerFactory factory = Persistence.createEntityManagerFactory(PERSISTENCE_UNIT_NAME);
+        ClienteDAO dao = new ClienteDAO(factory);
+
+        return dao.findClienteEntities();
+    }
+
     // <editor-fold defaultstate="collapsed" desc="HttpServlet methods. Click on the + sign on the left to edit the code.">
     /**
      * Handles the HTTP <code>GET</code> method.
@@ -175,5 +287,3 @@ public class UserControllerServlet extends HttpServlet {
     }// </editor-fold>
 
 }
-
-
